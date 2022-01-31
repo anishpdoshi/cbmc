@@ -45,6 +45,7 @@ public:
   }
 #endif
 
+protected:
   const typet &subtype() const
   {
     if(get_sub().empty())
@@ -52,6 +53,7 @@ public:
     return static_cast<const typet &>(get_sub().front());
   }
 
+public:
   typet &subtype()
   {
     subt &sub=get_sub();
