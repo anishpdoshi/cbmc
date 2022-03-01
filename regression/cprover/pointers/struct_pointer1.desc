@@ -1,0 +1,11 @@
+KNOWNBUG
+struct_pointer1.c
+--text
+^EXIT=0$
+^SIGNAL=0$
+^\(\d+\) ∀ ς : state \. \(S20\(ς\) ∧ ¬\(pointer_object\(cast\(ς\(❝main::1::my_struct_ptr❞\), empty\*\)\) = pointer_object\(cast\(address_of\(ς\(❝main::1::my_struct_ptr❞\)\), empty\*\)\)\)\) ⇒ S21\(ς\)$
+^\(\d+\) ∀ ς : state \. S21\(ς\) ⇒ S22\(ς\[ς\(❝main::1::my_struct_ptr❞\)\.❝data❞:=123\]\)$
+^\(\d+\) S23 = S22$
+^\(\d+\) ∀ ς : state \. S23\(ς\) ⇒ S24\(ς\[❝main::1::my_struct_data❞:=ς\(ς\(❝main::1::my_struct_ptr❞\)\.❝data❞\)\]\)$
+^\(\d+\) ∀ ς : state \. S24\(ς\) ⇒ \(ς\(❝main::1::my_struct_data❞\) = 123\)$
+--

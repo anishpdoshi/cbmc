@@ -1,0 +1,7 @@
+KNOWNBUG
+given_invariant6.c
+
+^EXIT=0$
+^SIGNAL=0$
+--
+--

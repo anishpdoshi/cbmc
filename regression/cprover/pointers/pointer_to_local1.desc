@@ -1,0 +1,7 @@
+KNOWNBUG
+pointer_to_local1.c
+--text
+^EXIT=0$
+^SIGNAL=0$
+^program is safe / function foo is safe / line .* property 1: SUCCESS$
+--

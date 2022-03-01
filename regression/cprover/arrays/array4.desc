@@ -1,0 +1,7 @@
+KNOWNBUG
+array4.c
+--text
+^EXIT=0$
+^SIGNAL=0$
+^program is safe / function main is safe / line .* property 1: SUCCESS$
+--

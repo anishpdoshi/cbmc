@@ -1,0 +1,9 @@
+KNOWNBUG
+struct_pointer2.c
+--text
+^EXIT=0$
+^SIGNAL=0$
+^\(\d+\) ∀ ς : state \. S21\(ς\) ⇒ S22\(ς\[❝main::1::my_struct_ptr❞:=address_of\(ς\(❝main::1::my_struct❞\)\)\]\)$
+^\(\d+\) ∀ ς : state \. S22\(ς\) ⇒ S23\(ς\[ς\(❝main::1::my_struct_ptr❞\)\.❝data❞:=123\]\)$
+^\(\d+\) ∀ ς : state \. S23\(ς\) ⇒ \(ς\(❝main::1::my_struct❞\.❝data❞\) = 123\)$
+--

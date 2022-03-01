@@ -1,0 +1,9 @@
+CORE
+array2.c
+--text
+^EXIT=0$
+^SIGNAL=0$
+^\(\d+\) ∀ ς : state \. \(S23\(ς\) ∧ ς\(❝main::1::i❞\) = ς\(❝main::1::j❞\)\) ⇒ S24\(ς\)$
+^\(\d+\) ∀ ς : state \. S24\(ς\) ⇒ \(ς\(element_address\(❝main::1::array❞, cast\(ς\(❝main::1::i❞\), signedbv\[64\]\)\)\) = ς\(element_address\(❝main::1::array❞, cast\(ς\(❝main::1::j❞\), signedbv\[64\]\)\)\)\)$
+^\(\d+\) ∀ ς : state \. S25\(ς\) ⇒ \(ς\(element_address\(❝main::1::array❞, cast\(ς\(❝main::1::i❞\), signedbv\[64\]\)\)\) = ς\(element_address\(❝main::1::array❞, cast\(ς\(❝main::1::k❞\), signedbv\[64\]\)\)\)\)$
+--
