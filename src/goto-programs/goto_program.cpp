@@ -126,6 +126,11 @@ std::ostream &goto_programt::output_instruction(
         out << "HAVOC_OBJECT " << format(code.op0()) << '\n';
         break;
       }
+      else if(code.get_statement() == ID_output)
+      {
+        out << "OUTPUT " << format(code.op0()) << '\n';
+        break;
+      }
       // fallthrough
     }
 
