@@ -8,9 +8,13 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "smt2_dec.h"
 
+#include <util/arith_tools.h>
+#include <util/ieee_float.h>
 #include <util/invariant.h>
 #include <util/message.h>
 #include <util/run.h>
+#include <util/std_expr.h>
+#include <util/std_types.h>
 #include <util/tempfile.h>
 
 #include "smt2irep.h"
@@ -31,23 +35,54 @@ std::string smt2_dect::decision_procedure_text() const
   // clang-format on
 }
 
-decision_proceduret::resultt smt2_dect::dec_solve()
+#include <iostream>
+void smt2_dect::substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition)
 {
+  problem_str = stringstream.str();
+  /* std::cout << "====== Original problem =======\n" << problem_str; */
+  for (const auto& entry : name2funcdefinition) {
+    const std::string& binary_name = entry.first;
+    const std::string& new_fun = entry.second;
+    /* std::cout << "- Name: " << binary_name << '\n'; */
+    /* std::cout << "---- " << new_fun << '\n'; */
+    size_t start = problem_str.find(binary_name);
+    assert(start != std::string::npos);
+    size_t end_line = problem_str.find('\n', start);
+    size_t start_line = problem_str.rfind('\n', start) + 1;
+    assert(end_line != std::string::npos);
+    assert(start_line != std::string::npos);
+    problem_str.replace(start_line, end_line - start_line, new_fun);
+  } 
+  substituted_oracles = true;
+}
+
+decision_proceduret::resultt smt2_dect::dec_solve()
+{ 
+  // has to substitute oracle before calling this function
+  // TODO: set problem_str to stringstream.str() if problem_str_is_set is false 
+  if (!substituted_oracles) {
+    problem_str = stringstream.str();
+    substituted_oracles = true;
+  }
+  assert(substituted_oracles);
   ++number_of_solver_calls;
 
   temporary_filet temp_file_problem("smt2_dec_problem_", ""),
     temp_file_stdout("smt2_dec_stdout_", ""),
     temp_file_stderr("smt2_dec_stderr_", "");
 
-  const auto write_problem_to_file = [&](std::ofstream problem_out) {
-    cached_output << stringstream.str();
-    stringstream.str(std::string{});
+  {
+    // we write the problem into a file
+    std::ofstream problem_out(
+      temp_file_problem(), std::ios_base::out | std::ios_base::trunc);
+    /* problem_out << stringstream.str(); */
+    problem_out << problem_str;
+    std::cout << "----------- Input -----------\n";
+    std::cout<< problem_str << std::endl;
+    std::cout << "-----------------------------\n";
     write_footer();
-    problem_out << cached_output.str() << stringstream.str();
-    stringstream.str(std::string{});
-  };
-  write_problem_to_file(std::ofstream(
-    temp_file_problem(), std::ios_base::out | std::ios_base::trunc));
+    substituted_oracles = false;
+  }
 
   std::vector<std::string> argv;
   std::string stdin_filename;
@@ -76,7 +111,7 @@ decision_proceduret::resultt smt2_dect::dec_solve()
   case solvert::CVC4:
     // The flags --bitblast=eager --bv-div-zero-const help but only
     // work for pure bit-vector formulas.
-    argv = {"cvc4", "-L", "smt2", temp_file_problem()};
+    argv = {"cvc4", "-L", "smt2", "--produce-models", "--nl-ext-tplanes", temp_file_problem()};
     break;
 
   case solvert::MATHSAT:
@@ -126,6 +161,12 @@ decision_proceduret::resultt smt2_dect::dec_solve()
     return decision_proceduret::resultt::D_ERROR;
   }
 
+  std::cout << "----------- Output ----------\n";
+  std::ifstream debug_in(temp_file_stdout());
+  std::cout << debug_in.rdbuf();
+  debug_in.close();
+  std::cout << "-----------------------------\n";
+
   std::ifstream in(temp_file_stdout());
   return read_result(in);
 }
@@ -139,7 +180,7 @@ decision_proceduret::resultt smt2_dect::read_result(std::istream &in)
   boolean_assignment.resize(no_boolean_variables, false);
 
   typedef std::unordered_map<irep_idt, irept> valuest;
-  valuest parsed_values;
+  valuest values;
 
   while(in)
   {
@@ -154,12 +195,6 @@ decision_proceduret::resultt smt2_dect::read_result(std::istream &in)
       res=resultt::D_SATISFIABLE;
     else if(parsed.id()=="unsat")
       res=resultt::D_UNSATISFIABLE;
-    else if(parsed.id() == "unknown")
-    {
-      messaget log{message_handler};
-      log.error() << "SMT2 solver returned \"unknown\"" << messaget::eom;
-      return decision_proceduret::resultt::D_ERROR;
-    }
     else if(
       parsed.id().empty() && parsed.get_sub().size() == 1 &&
       parsed.get_sub().front().get_sub().size() == 2)
@@ -173,7 +208,7 @@ decision_proceduret::resultt smt2_dect::read_result(std::istream &in)
       // ( (|some_integer| 0) )
       // ( (|some_integer| (- 10)) )
 
-      parsed_values[s0.id()] = s1;
+      values[s0.id()]=s1;
     }
     else if(
       parsed.id().empty() && parsed.get_sub().size() == 2 &&
@@ -181,61 +216,29 @@ decision_proceduret::resultt smt2_dect::read_result(std::istream &in)
     {
       // We ignore errors after UNSAT because get-value after check-sat
       // returns unsat will give an error.
-      if(res != resultt::D_UNSATISFIABLE)
+      if(res!=resultt::D_UNSATISFIABLE)
       {
-        const auto &message = id2string(parsed.get_sub()[1].id());
-        // Special case error handling
-        if(
-          solver == solvert::Z3 &&
-          message.find("must not contain quantifiers") != std::string::npos)
-        {
-          // We tried to "(get-value |XXXX|)" where |XXXX| is determined to
-          // include a quantified expression
-          // Nothing to do, this should be caught and value assigned by the
-          // set_to defaults later.
-        }
-        // Unhandled error, log the error and report it back up to caller
-        else
-        {
-          messaget log{message_handler};
-          log.error() << "SMT2 solver returned error message:\n"
-                      << "\t\"" << message << "\"" << messaget::eom;
-          return decision_proceduret::resultt::D_ERROR;
-        }
+        messaget log{message_handler};
+        log.error() << "SMT2 solver returned error message:\n"
+                    << "\t\"" << parsed.get_sub()[1].id() << "\""
+                    << messaget::eom;
+        return decision_proceduret::resultt::D_ERROR;
       }
     }
   }
 
-  // If the result is not satisfiable don't bother updating the assignments and
-  // values (since we didn't get any), just return.
-  if(res != resultt::D_SATISFIABLE)
-    return res;
-
   for(auto &assignment : identifier_map)
   {
-    std::string conv_id = convert_identifier(assignment.first);
-    const irept &value = parsed_values[conv_id];
-    assignment.second.value = parse_rec(value, assignment.second.type);
+    std::string conv_id=convert_identifier(assignment.first);
+    const irept &value=values[conv_id];
+    assignment.second.value=parse_rec(value, assignment.second.type);
   }
 
   // Booleans
   for(unsigned v=0; v<no_boolean_variables; v++)
   {
-    const std::string boolean_identifier = "B" + std::to_string(v);
-    boolean_assignment[v] = [&]() {
-      const auto found_parsed_value = parsed_values.find(boolean_identifier);
-      if(found_parsed_value != parsed_values.end())
-        return found_parsed_value->second.id() == ID_true;
-      // Work out the value based on what set_to was called with.
-      const auto found_set_value =
-        set_values.find('|' + boolean_identifier + '|');
-      if(found_set_value != set_values.end())
-        return found_set_value->second;
-      // Old code used the computation
-      // const irept &value=values["B"+std::to_string(v)];
-      // boolean_assignment[v]=(value.id()==ID_true);
-      return parsed_values[boolean_identifier].id() == ID_true;
-    }();
+    const irept &value=values["B"+std::to_string(v)];
+    boolean_assignment[v]=(value.id()==ID_true);
   }
 
   return res;
