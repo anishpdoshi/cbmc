@@ -42,14 +42,15 @@ public:
   resultt dec_solve() override;
   std::string decision_procedure_text() const override;
 
+  void substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition);
+
 protected:
   message_handlert &message_handler;
 
-  /// Everything except the footer is cached, so that output files can be
-  /// rewritten with varying footers.
-  std::stringstream cached_output;
-
   resultt read_result(std::istream &in);
+
+  std::string problem_str;
+  bool substituted_oracles;
 };
 
 #endif // CPROVER_SOLVERS_SMT2_SMT2_DEC_H
