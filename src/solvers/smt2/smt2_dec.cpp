@@ -36,8 +36,35 @@ std::string smt2_dect::decision_procedure_text() const
 }
 
 #include <iostream>
-decision_proceduret::resultt smt2_dect::dec_solve()
+void smt2_dect::substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition)
 {
+  problem_str = stringstream.str();
+  /* std::cout << "====== Original problem =======\n" << problem_str; */
+  for (const auto& entry : name2funcdefinition) {
+    const std::string& binary_name = entry.first;
+    const std::string& new_fun = entry.second;
+    /* std::cout << "- Name: " << binary_name << '\n'; */
+    /* std::cout << "---- " << new_fun << '\n'; */
+    size_t start = problem_str.find(binary_name);
+    assert(start != std::string::npos);
+    size_t end_line = problem_str.find('\n', start);
+    size_t start_line = problem_str.rfind('\n', start) + 1;
+    assert(end_line != std::string::npos);
+    assert(start_line != std::string::npos);
+    problem_str.replace(start_line, end_line - start_line, new_fun);
+  } 
+  substituted_oracles = true;
+}
+
+decision_proceduret::resultt smt2_dect::dec_solve()
+{ 
+  // has to substitute oracle before calling this function
+  // TODO: set problem_str to stringstream.str() if problem_str_is_set is false 
+  if (!substituted_oracles) {
+    problem_str = stringstream.str();
+    substituted_oracles = true;
+  }
+  assert(substituted_oracles);
   ++number_of_solver_calls;
 
   temporary_filet temp_file_problem("smt2_dec_problem_", ""),
@@ -48,9 +75,13 @@ decision_proceduret::resultt smt2_dect::dec_solve()
     // we write the problem into a file
     std::ofstream problem_out(
       temp_file_problem(), std::ios_base::out | std::ios_base::trunc);
-    problem_out << stringstream.str();
-    // std::cout<<stringstream.str() << std::endl;
+    /* problem_out << stringstream.str(); */
+    problem_out << problem_str;
+    std::cout << "----------- Input -----------\n";
+    std::cout<< problem_str << std::endl;
+    std::cout << "-----------------------------\n";
     write_footer(problem_out);
+    substituted_oracles = false;
   }
 
   std::vector<std::string> argv;
@@ -129,6 +160,12 @@ decision_proceduret::resultt smt2_dect::dec_solve()
     log.error() << "error running SMT2 solver" << messaget::eom;
     return decision_proceduret::resultt::D_ERROR;
   }
+
+  std::cout << "----------- Output ----------\n";
+  std::ifstream debug_in(temp_file_stdout());
+  std::cout << debug_in.rdbuf();
+  debug_in.close();
+  std::cout << "-----------------------------\n";
 
   std::ifstream in(temp_file_stdout());
   return read_result(in);
