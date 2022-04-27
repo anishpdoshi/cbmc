@@ -59,8 +59,10 @@ void smt2_dect::substitute_oracles(std::unordered_map<std::string, std::string>&
 decision_proceduret::resultt smt2_dect::dec_solve()
 { 
   // has to substitute oracle before calling this function
-  // TODO: set problem_str to stringstream.str() if problem_str_is_set is false 
-  if (!substituted_oracles) {
+  // TODO: set problem_str to stringstream.str() if problem_str_is_set is false
+//  std::cout << "substit " << substituted_oracles << std::endl;
+//    std::cout << "problem " << x << std::endl;
+  if (substituted_oracles != true) {
     problem_str = stringstream.str();
     substituted_oracles = true;
   }
