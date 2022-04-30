@@ -3091,6 +3091,24 @@ void smt2_convt::convert_relation(const binary_relation_exprt &expr)
     convert_expr(expr.op1());
     out << ")";
   }
+  else if(op_type.id()==ID_real)
+  {
+     out << "(";
+    if(expr.id()==ID_le)
+      out << "<=";
+    else if(expr.id()==ID_lt)
+      out << "<";
+    else if(expr.id()==ID_ge)
+      out << ">=";
+    else if(expr.id()==ID_gt)
+      out << ">";
+
+    out << " ";
+    convert_expr(expr.op0());
+    out << " ";
+    convert_expr(expr.op1());
+    out << ")";
+  }
   else if(op_type.id()==ID_floatbv)
   {
     if(use_FPA_theory)

@@ -60,7 +60,7 @@ decision_proceduret::resultt smt2_dect::dec_solve()
 { 
   // has to substitute oracle before calling this function
   // TODO: set problem_str to stringstream.str() if problem_str_is_set is false 
-  if (!substituted_oracles) {
+  if (substituted_oracles!=true) {
     problem_str = stringstream.str();
     substituted_oracles = true;
   }
