@@ -3369,7 +3369,8 @@ void smt2_convt::convert_floatbv_plus(const ieee_float_op_exprt &expr)
 
 void smt2_convt::convert_minus(const minus_exprt &expr)
 {
-  if(expr.type().id()==ID_integer)
+  if(expr.type().id()==ID_integer || 
+     expr.type().id() == ID_real)
   {
     out << "(- ";
     convert_expr(expr.op0());

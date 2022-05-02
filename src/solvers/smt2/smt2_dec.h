@@ -35,7 +35,8 @@ public:
     solvert _solver,
     message_handlert &_message_handler)
     : smt2_convt(_ns, _benchmark, _notes, _logic, _solver, stringstream),
-      message_handler(_message_handler)
+      message_handler(_message_handler),
+      substituted_oracles(false)
   {
   }
 
