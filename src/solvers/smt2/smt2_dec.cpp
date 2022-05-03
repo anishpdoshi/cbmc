@@ -56,6 +56,16 @@ void smt2_dect::substitute_oracles(std::unordered_map<std::string, std::string>&
   substituted_oracles = true;
 }
 
+void smt2_dect::push_assump_str(std::string& _assump_str)
+{
+  assump_str = _assump_str;
+}
+
+void smt2_dect::pop()
+{
+  assump_str.clear();
+}
+
 decision_proceduret::resultt smt2_dect::dec_solve()
 { 
   // has to substitute oracle before calling this function
@@ -76,9 +86,9 @@ decision_proceduret::resultt smt2_dect::dec_solve()
     std::ofstream problem_out(
       temp_file_problem(), std::ios_base::out | std::ios_base::trunc);
     /* problem_out << stringstream.str(); */
-    problem_out << problem_str;
+    problem_out << problem_str << assump_str;
     std::cout << "----------- Input -----------\n";
-    std::cout<< problem_str << std::endl;
+    std::cout << problem_str << assump_str << std::endl;
     std::cout << "-----------------------------\n";
     write_footer(problem_out);
     substituted_oracles = false;

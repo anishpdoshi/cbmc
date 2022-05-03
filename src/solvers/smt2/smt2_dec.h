@@ -44,6 +44,8 @@ public:
   std::string decision_procedure_text() const override;
 
   void substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition);
+  void push_assump_str(std::string& _assump_str);
+  void pop() override;
 
 protected:
   message_handlert &message_handler;
@@ -51,6 +53,7 @@ protected:
   resultt read_result(std::istream &in);
 
   std::string problem_str;
+  std::string assump_str;
   bool substituted_oracles;
 };
 
