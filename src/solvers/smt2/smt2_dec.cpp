@@ -36,10 +36,10 @@ std::string smt2_dect::decision_procedure_text() const
 }
 
 #include <iostream>
-void smt2_dect::substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition)
+void smt2_dect::substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition, bool as_binary)
 {
   problem_str = stringstream.str();
-  /* std::cout << "====== Original problem =======\n" << problem_str; */
+//  std::cout << "====== Original problem =======\n" << problem_str;
   for (const auto& entry : name2funcdefinition) {
     const std::string& binary_name = entry.first;
     const std::string& new_fun = entry.second;
@@ -52,7 +52,8 @@ void smt2_dect::substitute_oracles(std::unordered_map<std::string, std::string>&
     assert(end_line != std::string::npos);
     assert(start_line != std::string::npos);
     problem_str.replace(start_line, end_line - start_line, new_fun);
-  } 
+  }
+//    std::cout << "====== SUBSTITUTED problem =======\n" << problem_str;
   substituted_oracles = true;
 }
 

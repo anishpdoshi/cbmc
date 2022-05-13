@@ -43,7 +43,7 @@ public:
   resultt dec_solve() override;
   std::string decision_procedure_text() const override;
 
-  void substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition);
+  void substitute_oracles(std::unordered_map<std::string, std::string>& name2funcdefinition, bool as_binary);
   void push_assump_str(std::string& _assump_str);
   void pop() override;
 
